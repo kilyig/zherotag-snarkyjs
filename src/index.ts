@@ -5,9 +5,13 @@ import { ZheroTagGame } from './ZheroTagGame.js';
 import { ZheroTagMoves } from './ZheroTagMoves.js';
 import { ZheroTagJudge } from './ZheroTagJudge.js';
 
+import { modexp } from './Utils.js';
+
 export { Add };
 export { PiecePosition };
 export { ZheroTagPlayer };
 export { ZheroTagGame };
 export { ZheroTagMoves };
 export { ZheroTagJudge };
+
+export { modexp };
