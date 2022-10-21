@@ -1,4 +1,4 @@
-import { Field, CircuitValue, prop } from 'snarkyjs';
+import { Field, CircuitValue, prop, Poseidon } from 'snarkyjs';
 
 export class PiecePosition extends CircuitValue {
   @prop x: Field;
@@ -6,5 +6,9 @@ export class PiecePosition extends CircuitValue {
 
   static fromField(x: Field, y: Field) {
     return new PiecePosition(x, y);
+  }
+
+  hash(salt: Field) {
+    return Poseidon.hash([this.x, this.y, salt]);
   }
 }

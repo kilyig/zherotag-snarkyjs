@@ -1,4 +1,5 @@
 import { Circuit, Field } from 'snarkyjs';
+import { PiecePosition } from './PiecePosition';
 
 export function modexp(g: Field, x: number) {
   let result = Field(1);
@@ -11,4 +12,14 @@ export function modexp(g: Field, x: number) {
   }
 
   return result;
+}
+
+export function prepareProtocolPacket(squares: PiecePosition[], exp: number) {
+  let packet: Field[] = [];
+  squares.forEach(function (sqr) {
+    // Field(1) is not necessary but the function requires it
+    packet.push(modexp(sqr.hash(Field(1)), exp));
+  });
+
+  return packet;
 }

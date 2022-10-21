@@ -12,6 +12,7 @@ import {
 
 import { ZheroTagGame } from './ZheroTagGame.js';
 import { PiecePosition } from './PiecePosition.js';
+import { prepareProtocolPacket } from './Utils.js';
 
 export class ZheroTagMoves extends SmartContract {
   @method findSidesInGame(game: ZheroTagGame, playerPublicKey: PublicKey) {
@@ -36,8 +37,8 @@ export class ZheroTagMoves extends SmartContract {
     oldPos: PiecePosition,
     oldPosSalt: Field,
     newPos: PiecePosition,
-    newPosSalt: Field
-    /*alpha: Field,*/
+    newPosSalt: Field,
+    alpha: number
   ) {
     // TODO: check that the caller is actually a player in this game
     // so, player should not be undefined
@@ -56,15 +57,10 @@ export class ZheroTagMoves extends SmartContract {
     game.turnstep.assertEquals(2);
 
     // check that oldPos is actually the previous position
-    Poseidon.hash([oldPos.x, oldPos.y, oldPosSalt]).assertEquals(
-      game.players[player].posHash
-    );
+    oldPos.hash(oldPosSalt).assertEquals(game.players[player].posHash);
 
     // the new position should be a Moore neighbor of the old position.
-    oldPos.x.sub(newPos.x).assertLte(1);
-    newPos.x.sub(oldPos.x).assertLte(1);
-    oldPos.y.sub(newPos.y).assertLte(1);
-    newPos.y.sub(oldPos.y).assertLte(1);
+    game.isValidMove(oldPos, newPos).assertTrue();
 
     // update the game state
     let newPosHash = Poseidon.hash([newPos.x, newPos.y, newPosSalt]);
@@ -78,6 +74,10 @@ export class ZheroTagMoves extends SmartContract {
     );
     let newSig = Signature.create(callerPrivateKey, newGameState.toFields());
 
-    return newSig;
+    // prepare packet for board update protocol
+    return [
+      newSig,
+      prepareProtocolPacket(newGameState.visibleSquares(newPos), alpha),
+    ];
   }
 }

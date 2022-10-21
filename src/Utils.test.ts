@@ -59,7 +59,7 @@ describe('modexp function', () => {
     expect(exp_1_first).toEqual(exp_2_first);
   });
 
-  test('add exponents then raise = raise to exponents and then multiply', () => {
+  test('add exponents then raise = raise to exponents then multiply', () => {
     let exp_1 = 3;
     let exp_2 = 7;
     let base: Field = Field(5);
