@@ -12,60 +12,62 @@ import { PiecePosition } from './PiecePosition.js';
 import { prepareProtocolPacket } from './Utils.js';
 
 export class ZheroTagProtocolState extends CircuitValue {
-  @prop signature: Signature;
   @prop protocolStep: UInt32;
   game: ZheroTagGame;
 
   move(
     callerPrivateKey: PrivateKey,
-    game: ZheroTagGame,
-    gameSignature: Signature,
     oldPos: PiecePosition,
     oldPosSalt: Field,
     newPos: PiecePosition,
     newPosSalt: Field,
     alpha: Field
   ) {
-    // make the move and get the new game state
-    let [newGame, newSig] = game.play(
+    // it must be someone's turn to make a move
+    // so, the last protocol state should be step 2
+    this.protocolStep.assertEquals(UInt32.fromNumber(2));
+
+    // make the move and update the game state
+    this.game.play(callerPrivateKey, oldPos, oldPosSalt, newPos, newPosSalt);
+
+    // update the protocol turn
+    this.protocolStep = UInt32.zero;
+
+    // sign the current protocol state
+    let signature: Signature = Signature.create(
       callerPrivateKey,
-      game,
-      gameSignature,
-      oldPos,
-      oldPosSalt,
-      newPos,
-      newPosSalt
+      this.toFields()
     );
 
     // prepare packet for board update protocol
     return [
-      newSig,
-      prepareProtocolPacket(newGame.visibleSquares(newPos), alpha),
+      signature,
+      prepareProtocolPacket(this.game.visibleSquares(newPos), alpha),
     ];
   }
 
-  replyToMove() /*callerPrivateKey: PrivateKey,
+  replyToMove /*callerPrivateKey: PrivateKey,
     game: ZheroTagGame,
     gameSignature: Signature,
     oldPos: PiecePosition,
     oldPosSalt: Field,
     newPos: PiecePosition,
     newPosSalt: Field,
-    alpha: Field*/
-  {
-    // set 1: apply your own secret value to the values in the set
-    // that was created from the squares the opponent can see
-    // set 2: apply your own secret to your piece's position
-    // both sets are sent to the opponent
+    alpha: Field*/() {
+    // set 1 (for protocol 1): apply your first secret value to the values in the set
+    //                         that was created from the squares the opponent can see
+    // set 2 (for protocol 1): apply your first secret value to your piece's position
+    // set 3 (for protocol 2): apply your second secret value to the squares that you
+    //                         can see
+    // all sets are sent to the opponent
   }
 
-  replyToReplyToMove() /*callerPrivateKey: PrivateKey,
+  replyToReplyToMove /*callerPrivateKey: PrivateKey,
     game: ZheroTagGame,
     gameSignature: Signature,
     oldPos: PiecePosition,
     oldPosSalt: Field,
     newPos: PiecePosition,
     newPosSalt: Field,
-    alpha: UInt64*/
-  {}
+    alpha: UInt64*/() {}
 }

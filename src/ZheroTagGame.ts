@@ -5,7 +5,6 @@ import {
   PublicKey,
   Circuit,
   PrivateKey,
-  Signature,
 } from 'snarkyjs';
 
 import { PiecePosition } from './PiecePosition.js';
@@ -13,24 +12,29 @@ import { ZheroTagBoard } from './ZheroTagBoard.js';
 
 export class ZheroTagGame extends CircuitValue {
   @prop ID: Field;
-  @prop turn: Field;
-  board: ZheroTagBoard;
   playerAddresses: [PublicKey, PublicKey];
+  board: ZheroTagBoard;
+  @prop turn: Field;
 
   static fromField(
     ID: Field,
-    turn: Field,
+    playerAddresses: [PublicKey, PublicKey],
     board: ZheroTagBoard,
-    players: [PublicKey, PublicKey]
+    turn: Field
   ) {
-    return new ZheroTagGame(ID, turn, board, players);
+    return new ZheroTagGame(ID, playerAddresses, board, turn);
   }
 
-  findSides(game: ZheroTagGame, playerPublicKey: PublicKey) {
-    let me = Circuit.if(game.playerAddresses[0].equals(playerPublicKey), 0, 1);
-    let you = Circuit.if(game.playerAddresses[0].equals(playerPublicKey), 1, 0);
+  findSides(playerPublicKey: PublicKey) {
+    let me = Circuit.if(this.playerAddresses[0].equals(playerPublicKey), 0, 1);
+    let you = Circuit.if(this.playerAddresses[0].equals(playerPublicKey), 1, 0);
 
     return [me, you];
+  }
+
+  findPlayerNumber(playerPublicKey: PublicKey) {
+    let me = Circuit.if(this.playerAddresses[0].equals(playerPublicKey), 0, 1);
+    return me;
   }
 
   isPlaying(playerAddress: PublicKey) {
@@ -64,37 +68,29 @@ export class ZheroTagGame extends CircuitValue {
 
   play(
     callerPrivateKey: PrivateKey,
-    game: ZheroTagGame,
-    gameSignature: Signature,
     oldPos: PiecePosition,
     oldPosSalt: Field,
     newPos: PiecePosition,
     newPosSalt: Field
-  ): [ZheroTagGame, Signature] {
+  ) {
     // check that the caller is actually a player in this game
-    game.isPlaying(callerPrivateKey.toPublicKey()).assertTrue();
+    this.isPlaying(callerPrivateKey.toPublicKey()).assertTrue();
 
-    let [player, opponent] = this.findSides(
-      game,
-      callerPrivateKey.toPublicKey()
-    );
-
-    // check the signature
-    gameSignature.verify(game.playerAddresses[opponent], game.toFields());
+    let player = this.findPlayerNumber(callerPrivateKey.toPublicKey());
 
     // it should be the caller's turn
-    Field.fromNumber(player).assertEquals(game.turn);
+    Field.fromNumber(player).assertEquals(this.turn);
 
     // check that oldPos is actually the previous position
-    oldPos.hash(oldPosSalt).assertEquals(game.board.players[player].posHash);
+    oldPos.hash(oldPosSalt).assertEquals(this.board.players[player].posHash);
 
     // the new position should be a Moore neighbor of the old position.
-    game.isValidMove(oldPos, newPos).assertTrue();
+    this.isValidMove(oldPos, newPos).assertTrue();
 
     // update the game state
     // TODO: do the rest
-    game.turn = game.turn.add(Field(1));
-    game.board.players[player].posHash = newPos.hash(newPosSalt);
+    this.turn = this.turn.add(Field(1));
+    this.board.players[player].posHash = newPos.hash(newPosSalt);
     // let newPosHash = Poseidon.hash([newPos.x, newPos.y, newPosSalt]);
     // let newTurnstep = Field(1);
     // game.board.players[player].posHash = newPosHash;
@@ -104,10 +100,5 @@ export class ZheroTagGame extends CircuitValue {
     //   game.turn,
     //   newTurnstep
     // );
-
-    // the new game state should be signed by the caller of this function
-    let newSig = Signature.create(callerPrivateKey, game.toFields());
-
-    return [game, newSig];
   }
 }
