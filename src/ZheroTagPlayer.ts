@@ -1,10 +1,9 @@
-import { Field, CircuitValue, PublicKey, prop } from 'snarkyjs';
+import { Field, CircuitValue, prop } from 'snarkyjs';
 
 export class ZheroTagPlayer extends CircuitValue {
-  @prop address: PublicKey;
   @prop posHash: Field;
 
-  static fromField(address: PublicKey, posHash: Field) {
-    return new ZheroTagPlayer(address, posHash);
+  static fromField(posHash: Field) {
+    return new ZheroTagPlayer(posHash);
   }
 }
