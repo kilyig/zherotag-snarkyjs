@@ -1,24 +1,32 @@
-import { Circuit, Field } from 'snarkyjs';
+import { Circuit, Field, Group, Scalar, UInt64 } from 'snarkyjs';
 import { PiecePosition } from './PiecePosition';
 
-export function modexp(g: Field, x: number) {
+// this is around 9-10x slower than Group.scale, so it won't be used in the protocol
+export function modexp(g: Field, x: UInt64) {
   let result = Field(1);
   let base = g;
 
-  while (x > 0) {
-    result = Circuit.if(x % 2 === 1, result.mul(base), result);
-    x = Math.floor(x / 2);
+  for (let i = 0; i < 64; i++) {
+    result = Circuit.if(
+      x.mod(new UInt64(2)).equals(UInt64.one),
+      result.mul(base),
+      result
+    );
+    x = x.div(2);
     base = base.square();
   }
 
   return result;
 }
 
-export function prepareProtocolPacket(squares: PiecePosition[], exp: number) {
-  let packet: Field[] = [];
+export function prepareProtocolPacket(squares: PiecePosition[], exp: Field) {
+  let packet: Group[] = [];
   squares.forEach(function (sqr) {
-    // Field(1) is not necessary but the function requires it
-    packet.push(modexp(sqr.hash(Field(1)), exp));
+    // The `Field(1)` salt is not necessary but the function requires it
+    // TODO: complete this function
+    packet.push(
+      new Group(sqr.hash(Field(1)), Field(1)).scale(Scalar.ofFields([exp]))
+    );
   });
 
   return packet;
