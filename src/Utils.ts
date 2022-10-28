@@ -19,7 +19,10 @@ export function modexp(g: Field, x: UInt64) {
   return result;
 }
 
-export function prepareProtocolPacket(squares: PiecePosition[], exp: Field) {
+export function prepareProtocolPacket(
+  squares: PiecePosition[],
+  exp: Field
+): Group[] {
   let packet: Group[] = [];
   squares.forEach(function (sqr) {
     // The `Field(1)` salt is not necessary but the function requires it
@@ -30,4 +33,16 @@ export function prepareProtocolPacket(squares: PiecePosition[], exp: Field) {
   });
 
   return packet;
+}
+
+export function reexponentiateProtocolPacket(
+  packets: Group[],
+  exp: Field
+): Group[] {
+  let newPacket: Group[] = [];
+  packets.forEach(function (packet) {
+    newPacket.push(packet.scale(Scalar.ofFields([exp])));
+  });
+
+  return newPacket;
 }

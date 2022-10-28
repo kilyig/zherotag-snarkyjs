@@ -43,27 +43,22 @@ export class ZheroTagGame extends CircuitValue {
       .or(playerAddress.equals(this.playerAddresses[1]));
   }
 
-  isValidMove(initial: PiecePosition, final: PiecePosition) {
-    return (
-      initial.x.sub(final.x).lte(1) &&
-      final.x.sub(initial.x).lte(1) &&
-      initial.y.sub(final.y).lte(1) &&
-      final.y.sub(initial.y).lte(1)
-    );
+  isPlayingNext(playerAddress: PublicKey) {
+    // first check that the caller is actually a player in this game
+    this.isPlaying(playerAddress).assertTrue();
+
+    let player = this.findPlayerNumber(playerAddress);
+
+    return Field.fromNumber(player).equals(this.turn);
   }
 
   visibleSquares(pos: PiecePosition) {
-    return [
-      PiecePosition.fromField(pos.x.sub(Field(1)), pos.y.sub(Field(1))),
-      PiecePosition.fromField(pos.x.sub(Field(1)), pos.y),
-      PiecePosition.fromField(pos.x.sub(Field(1)), pos.y.add(Field(1))),
-      PiecePosition.fromField(pos.x, pos.y.sub(Field(1))),
-      PiecePosition.fromField(pos.x, pos.y),
-      PiecePosition.fromField(pos.x, pos.y.add(Field(1))),
-      PiecePosition.fromField(pos.x.add(Field(1)), pos.y.sub(Field(1))),
-      PiecePosition.fromField(pos.x.add(Field(1)), pos.y),
-      PiecePosition.fromField(pos.x.add(Field(1)), pos.y.add(Field(1))),
-    ];
+    return this.board.visibleSquares(pos);
+  }
+
+  verifyPos(playerAddress: PublicKey, pos: PiecePosition, posSalt: Field) {
+    let player = this.findPlayerNumber(playerAddress);
+    return this.board.verifyPos(player, pos, posSalt);
   }
 
   play(
@@ -73,32 +68,19 @@ export class ZheroTagGame extends CircuitValue {
     newPos: PiecePosition,
     newPosSalt: Field
   ) {
-    // check that the caller is actually a player in this game
-    this.isPlaying(callerPrivateKey.toPublicKey()).assertTrue();
+    // it should be the caller's turn
+    this.isPlayingNext(callerPrivateKey.toPublicKey()).assertTrue();
 
     let player = this.findPlayerNumber(callerPrivateKey.toPublicKey());
-
-    // it should be the caller's turn
-    Field.fromNumber(player).assertEquals(this.turn);
 
     // check that oldPos is actually the previous position
     oldPos.hash(oldPosSalt).assertEquals(this.board.players[player].posHash);
 
     // the new position should be a Moore neighbor of the old position.
-    this.isValidMove(oldPos, newPos).assertTrue();
+    this.board.isValidMove(oldPos, newPos).assertTrue();
 
     // update the game state
-    // TODO: do the rest
     this.turn = this.turn.add(Field(1));
     this.board.players[player].posHash = newPos.hash(newPosSalt);
-    // let newPosHash = Poseidon.hash([newPos.x, newPos.y, newPosSalt]);
-    // let newTurnstep = Field(1);
-    // game.board.players[player].posHash = newPosHash;
-    // let newGameState = ZheroTagGame.fromField(
-    //   game.ID,
-    //   game.players,
-    //   game.turn,
-    //   newTurnstep
-    // );
   }
 }

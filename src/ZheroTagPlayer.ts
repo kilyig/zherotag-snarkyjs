@@ -6,4 +6,8 @@ export class ZheroTagPlayer extends CircuitValue {
   static fromField(posHash: Field) {
     return new ZheroTagPlayer(posHash);
   }
+
+  getHash() {
+    return this.posHash;
+  }
 }
