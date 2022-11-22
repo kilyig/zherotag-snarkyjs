@@ -15,14 +15,16 @@ export class ZheroTagGame extends CircuitValue {
   playerAddresses: [PublicKey, PublicKey];
   board: ZheroTagBoard;
   @prop turn: Field;
+  @prop winner: Field;
 
   static fromField(
     ID: Field,
     playerAddresses: [PublicKey, PublicKey],
     board: ZheroTagBoard,
-    turn: Field
+    turn: Field,
+    winner: Field
   ) {
-    return new ZheroTagGame(ID, playerAddresses, board, turn);
+    return new ZheroTagGame(ID, playerAddresses, board, turn, winner);
   }
 
   findSides(playerPublicKey: PublicKey) {
@@ -61,6 +63,8 @@ export class ZheroTagGame extends CircuitValue {
     return this.board.verifyPos(player, pos, posSalt);
   }
 
+  updateWinner() {}
+
   play(
     callerPrivateKey: PrivateKey,
     oldPos: PiecePosition,
@@ -82,5 +86,8 @@ export class ZheroTagGame extends CircuitValue {
     // update the game state
     this.turn = this.turn.add(Field(1));
     this.board.players[player].posHash = newPos.hash(newPosSalt);
+
+    // check if the game has finished
+    this.updateWinner();
   }
 }
