@@ -1,6 +1,28 @@
 import { modexp } from './Utils';
 import { Field, isReady, Poseidon, shutdown, UInt64 } from 'snarkyjs';
 
+describe('packet preparation', () => {
+  beforeAll(async () => {
+    await isReady;
+  });
+
+  afterAll(async () => {
+    setTimeout(shutdown, 0);
+  });
+
+  test('simple packet preparation', () => {});
+
+  test('no intersection', () => {});
+
+  test('|intersection| = 1', () => {});
+
+  test('|intersection| > 1', () => {});
+
+  test('commutativity', () => {});
+
+  test('speed benchmark', () => {});
+});
+
 describe('modexp function', () => {
   beforeAll(async () => {
     await isReady;
