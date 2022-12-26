@@ -1,11 +1,3 @@
----
-title: "ZheroTag"
-date: 2022-07-17
-excerpt: "A ZKP and MPC game"
-math: true
-show_title: true
----
-
 # ZheroTag
 
 ## Game Description
