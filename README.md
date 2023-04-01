@@ -1,3 +1,4 @@
+# This is the SnarkyJS implementation. Please check the other ZheroTag repository in my profile for the newer and complete ZheroTag implementation.
 # ZheroTag
 
 ## Game Description
